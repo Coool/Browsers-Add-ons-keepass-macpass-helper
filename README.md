@@ -18,6 +18,6 @@ Check out my collection of [Privacy & Security](https://addons.mozilla.org/firef
 
 [^review]
 
-[^1]: https://github.com/belaviyo/keepass-macpass-helper/issues/62
+[^1]: [KeePass built-in OTP Secret Issue](https://github.com/belaviyo/keepass-macpass-helper/issues/62)
 [^2]: [KeePass One-Time Passwords (OTPs) Placeholders](https://keepass.info/help/base/placeholders.html#otp)
 [^review]: [My Review on Firefox add-ons page](https://addons.mozilla.org/en-US/firefox/addon/keepasshelper/reviews/1860139)
