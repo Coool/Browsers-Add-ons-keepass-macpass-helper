@@ -8,6 +8,7 @@ I have experience with Add-ons (Extensions):
 Active:
 * [KeePassXC-Browser](https://github.com/keepassxreboot/keepassxc-browser) (based on [chromeIPass](https://github.com/pfn/passifox) and some changes merged also from [KeePassHttp-Connector](https://github.com/smorks/keepasshttp-connector))
 * [ChromeKeePass](https://github.com/RoelVB/ChromeKeePass)
+* [KeeWeb Connect](https://github.com/keeweb/keeweb-connect)
 
 Inactive:
 * [KeePassHttp-Connector](https://github.com/smorks/keepasshttp-connector) (forked from chromeIPass/passIFox)
