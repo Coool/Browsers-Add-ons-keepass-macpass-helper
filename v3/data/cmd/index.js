@@ -10,9 +10,19 @@ let tab = {};
 let usernames = [];
 
 const timebased = {
+  words: {
+    otp: ['KPH: otp', 'KPH:otp', 'otp'],
+    sotp: ['KPH: sotp', 'KPH:sotp', 'sotp'],
+    bopt: ['TimeOtp-Secret-Base32']
+  },
+  includes(stringFields) {
+    return stringFields.some(o => timebased.words.otp.includes(o.Key)) ||
+      stringFields.some(o => timebased.words.sotp.includes(o.Key)) ||
+      stringFields.some(o => timebased.words.botp.includes(o.Key));
+  },
   async get(stringFields) {
-    const otp = stringFields.filter(o => ['KPH: otp', 'KPH:otp', 'otp'].includes(o.Key)).shift();
-    const sotp = stringFields.filter(o => ['KPH: sotp', 'KPH:sotp', 'sotp'].includes(o.Key)).shift();
+    const otp = stringFields.filter(o => timebased.words.otp.includes(o.Key)).shift();
+    const sotp = stringFields.filter(o => timebased.words.sotp.includes(o.Key)).shift();
 
     if (sotp) {
       return await engine.otp(await decrypt(sotp.Value));
@@ -22,7 +32,7 @@ const timebased = {
     }
 
     // built-in OTP of KeePass
-    const secret = stringFields.filter(o => ['TimeOtp-Secret-Base32'].includes(o.Key)).shift();
+    const secret = stringFields.filter(o => timebased.words.botp.includes(o.Key)).shift();
     const period = stringFields.filter(o => ['TimeOtp-Period'].includes(o.Key)).shift();
     const digits = stringFields.filter(o => ['TimeOtp-Length'].includes(o.Key)).shift();
 
@@ -106,29 +116,32 @@ catch (e) {
 }
 
 function add(login, name, password, stringFields, select = false) {
-  const entry = Object.assign(document.createElement('option'), {
-    textContent: login + (name ? ` - ${name}` : ''),
-    value: login
-  });
-  entry.dataset.password = password || '';
-  entry.stringFields = stringFields;
+  const {option} = list.add([{
+    name: login || '',
+    part: 'login',
+    title: login || '',
+    password,
+    stringFields
+  }, {
+    name: name || '',
+    part: 'name'
+  }], login, login, select);
+
   if (password) {
-    entry.title = `Username: ${login}
+    option.title = `Username: ${login}
 Name: ${name || ''}
 String Fields: ${(stringFields || []).length}`;
   }
   else {
-    entry.title = login;
+    option.title = login;
   }
 
-  list.appendChild(entry);
   list.focus();
-  if (select) {
-    list.value = login;
-  }
 }
 
 async function submit() {
+  document.getElementById('title').setAttribute('width', '1fr');
+
   let query = search.value = search.value || url;
   if (query.indexOf('://') === -1) {
     try {
@@ -139,7 +152,8 @@ async function submit() {
     catch (e) {}
   }
 
-  list.textContent = '';
+  list.clear();
+
   [...document.getElementById('toolbar').querySelectorAll('input')].forEach(input => {
     input.disabled = true;
   });
@@ -148,6 +162,7 @@ async function submit() {
     const response = await engine.search({
       url: query
     });
+
     if (response.Entries.length === 0) {
       add('No credential for this page!', undefined, undefined, undefined, true);
     }
@@ -178,18 +193,29 @@ async function submit() {
   }
   catch (e) {
     console.warn(e);
-    add(e.message, undefined, undefined, undefined, true);
+    add(e.message || 'Unknown Error', undefined, undefined, undefined, true);
   }
 }
 
 document.addEventListener('search', submit);
 
-document.addEventListener('change', e => {
+list.addEventListener('change', e => {
   const target = e.target;
-  if (target.nodeName === 'SELECT') {
-    const disabled = target.selectedOptions.length === 0 || !target.selectedOptions[0].dataset.password;
-    [...document.getElementById('toolbar').querySelectorAll('input')]
-      .forEach(input => input.disabled = disabled);
+
+  const disabled =
+    target.selectedValues.length === 0 ||
+    !target.selectedValues[0] ||
+    !target.selectedValues[0][0].password;
+
+  [...document.getElementById('toolbar').querySelectorAll('input')]
+    .forEach(input => input.disabled = disabled);
+
+  const o = e.target.selectedValues[0];
+  if (o && o[0]) {
+    const stringFields = o[0].stringFields;
+    if (stringFields) {
+      document.querySelector('#toolbar [data-cmd="otp"]').disabled = timebased.includes(stringFields) === false;
+    }
   }
 });
 
@@ -478,7 +504,7 @@ document.addEventListener('click', async e => {
     }
     //
     if (cmd && cmd.startsWith('insert-')) {
-      const checked = list.selectedOptions[0];
+      const checked = list.selectedValues[0][0];
       // insert helper function
       await chrome.scripting.executeScript({
         target: {
@@ -506,7 +532,7 @@ document.addEventListener('click', async e => {
 
       let inserted = false;
       // insert StringFields
-      if (checked.stringFields) {
+      if (checked.stringFields && checked.stringFields.length) {
         const r = await insert.fields(checked.stringFields);
         inserted = inserted || r.reduce((p, c) => p || c.result, false);
       }
@@ -517,7 +543,7 @@ document.addEventListener('click', async e => {
       }
       // insert password
       if (cmd === 'insert-password' || cmd === 'insert-both') {
-        const r = await insert.password(checked.dataset.password);
+        const r = await insert.password(checked.password);
         inserted = inserted || r.reduce((p, c) => p || c.result, false);
       }
 
@@ -565,15 +591,15 @@ document.addEventListener('click', async e => {
       window.close();
     }
     else if (cmd && cmd.startsWith('copy')) {
-      let content = list.value;
       if (e.detail === 'password' || alt) {
-        const checked = list.selectedOptions[0];
-        content = checked.dataset.password;
+        copy(list.selectedValues.map(a => a[0].password).join('\n'));
       }
-      copy(content);
+      else {
+        copy(list.selectedValues.map(a => a[0].name).join('\n'));
+      }
     }
     else if (cmd === 'otp') {
-      const checked = list.selectedOptions[0];
+      const checked = list.selectedValues[0][0];
 
       try {
         const s = await timebased.get(checked.stringFields);
@@ -607,7 +633,6 @@ document.addEventListener('click', async e => {
 
 // keep focus
 window.addEventListener('blur', () => window.setTimeout(window.focus, 0));
-
 
 // check HTTP access
 const access = () => new Promise(resolve => chrome.storage.local.get({
@@ -716,6 +741,7 @@ const access = () => new Promise(resolve => chrome.storage.local.get({
     console.warn(e);
     add(e.message, undefined, undefined, undefined, true);
     add('Use the options page to connect to KeePass, KeePassXC, or a local database');
+    document.getElementById('title').setAttribute('width', 0);
   }
   window.focus();
 })();
