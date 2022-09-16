@@ -1,5 +1,5 @@
 # [KeePassHelper Password Manager](https://github.com/belaviyo/keepass-macpass-helper)
-Helper add-on (extension) for KeePass/MacPass/KeePassXC to find and insert credentials, generate passwords, or save new logins without manual copy and paste. Available for [Firefox](https://mozilla.org/firefox/download) ([Waterfox](https://waterfox.net/download)), [Chromium](https://chromium.org/getting-involved/download-chromium) ([Chrome](https://google.com/intl/en_in/chrome), [Edge](https://microsoft.com/edge) and [Opera](https://opera.com/download)) browsers.
+Helper add-on (extension) for [KeePass](https://keepass.info)/[MacPass](https://macpassapp.org)/[KeePassXC](https://keepassxc.org) to find and insert credentials, generate passwords, or save new logins without manual copy and paste. Available for [Firefox](https://mozilla.org/firefox/download) ([Waterfox](https://waterfox.net/download)), [Chromium](https://chromium.org/getting-involved/download-chromium) ([Chrome](https://google.com/intl/en_in/chrome), [Edge](https://microsoft.com/edge) and [Opera](https://opera.com/download)) browsers.
 
 Best credentials (username, password, PIN) Add-on (Extension) for KeePass for my needs. Supports not only local machine, but any machine in your LAN. Recent changes[^1] supports KeePass built-in[^2] OTP.
 
@@ -21,15 +21,15 @@ Inactive:
 
 ### Components
 
-  * List View: https://webextension.org/custom-component/list-view/index.html
+  * [List View](https://webextension.org/custom-component/list-view/index.html)
 
 ### Add-ons (Extensions) links
 
-  * Homepage: https://add0n.com/keepass-helper.html
-  * Firefox (Waterfox): https://addons.mozilla.org/firefox/addon/keepasshelper
-  * Chrome (Chromium): https://chrome.google.com/webstore/detail/keepassmacpass-helper/jgnfghanfbjmimbdmnjfofnbcgpkbegj
-  * Edge (Chromium): https://microsoftedge.microsoft.com/addons/detail/bfmglfdehkodoiinbclgoppembjfgjkj
-  * Opera (Chromium): https://addons.opera.com/extensions/details/keepasshelper
+  * [Homepage](https://add0n.com/keepass-helper.html)
+  * [Firefox](https://addons.mozilla.org/lv/firefox/addon/keepasshelper) ([Waterfox](https://addons.mozilla.org/lv/firefox/addon/keepasshelper))
+  * [Chrome](https://chrome.google.com/webstore/detail/keepassmacpass-helper/jgnfghanfbjmimbdmnjfofnbcgpkbegj) (Chromium)
+  * [Edge](https://microsoftedge.microsoft.com/addons/detail/bfmglfdehkodoiinbclgoppembjfgjkj) (Chromium)
+  * [Opera](https://addons.opera.com/extensions/details/keepasshelper) (Chromium)
 
 P.S.<br>
 Check out my collection of [Privacy & Security](https://addons.mozilla.org/firefox/collections/17493519/Coool-Privacy-Security) add-ons
