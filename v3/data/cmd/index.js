@@ -5,6 +5,9 @@ const list = document.getElementById('list');
 const search = document.querySelector('input[type=search]');
 const psbox = document.getElementById('password-needed');
 
+// can I use allFames or chrome.scripting fails?
+let allFrames = true;
+
 let url;
 let tab = {};
 let usernames = [];
@@ -13,7 +16,7 @@ const timebased = {
   words: {
     otp: ['KPH: otp', 'KPH:otp', 'otp'],
     sotp: ['KPH: sotp', 'KPH:sotp', 'sotp'],
-    bopt: ['TimeOtp-Secret-Base32']
+    botp: ['TimeOtp-Secret-Base32']
   },
   includes(stringFields) {
     return stringFields.some(o => timebased.words.otp.includes(o.Key)) ||
@@ -115,33 +118,55 @@ catch (e) {
   console.warn(e);
 }
 
-function add(login, name, password, stringFields, select = false) {
-  const {option} = list.add([{
-    name: login || '',
-    part: 'login',
-    title: login || '',
-    password,
-    stringFields
-  }, {
-    name: name || '',
-    part: 'name'
-  }], login, login, select);
+function add(o, select = false) {
+  list.classList.remove('error');
 
-  if (password) {
-    option.title = `Username: ${login}
-Name: ${name || ''}
-String Fields: ${(stringFields || []).length}`;
+  const {option} = list.add([{
+    name: o.Login || '',
+    part: 'login',
+    title: o.Login || '',
+    password: o.Password,
+    stringFields: o.StringFields
+  }, {
+    name: o.Name || '',
+    part: 'name'
+  }, {
+    name: o.group || '',
+    part: 'group'
+  }], o.Login, o.Login, select);
+
+  if (o.Password) {
+    option.title = `Username: ${o.Login}
+Name: ${o.Name || ''}
+Group: ${o.group || ''}
+String Fields: ${(o.StringFields || []).length}`;
   }
   else {
-    option.title = login;
+    option.title = o.Login;
   }
 
   list.focus();
 }
+function error(e) {
+  document.getElementById('title').setAttribute('width', 0);
+  document.getElementById('group').setAttribute('width', 0);
+  list.classList.add('error');
+
+  console.warn(e);
+
+  list.add([{
+    name: e.message || e || 'Unknown Error',
+    part: 'login'
+  }], undefined, undefined, true);
+  const {option} = list.add([{
+    name: 'Use the options page to connect to KeePass, KeePassXC, or a local database',
+    part: 'login'
+  }]);
+  option.disabled = true;
+  list.focus();
+}
 
 async function submit() {
-  document.getElementById('title').setAttribute('width', '1fr');
-
   let query = search.value = search.value || url;
   if (query.indexOf('://') === -1) {
     try {
@@ -163,11 +188,16 @@ async function submit() {
       url: query
     });
 
+    // hide group and title columns if no data available
+    document.getElementById('group').setAttribute('width', response.Entries.some(o => o.group) ? '1fr' : '0');
+    document.getElementById('title').setAttribute('width', response.Entries.some(o => o.Name) ? '1fr' : '0');
     if (response.Entries.length === 0) {
-      add('No credential for this page!', undefined, undefined, undefined, true);
+      add({
+        Login: 'No credential for this page!'
+      }, true);
     }
     else { // select an item
-      response.Entries.forEach(e => add(e.Login, e.Name, e.Password, e.StringFields));
+      response.Entries.forEach(add);
 
       const username = response.Entries.map(e => e.Login).filter(u => usernames.indexOf(u) !== -1).shift() ||
         cookie.get() ||
@@ -193,7 +223,7 @@ async function submit() {
   }
   catch (e) {
     console.warn(e);
-    add(e.message || 'Unknown Error', undefined, undefined, undefined, true);
+    error(e);
   }
 }
 
@@ -211,6 +241,8 @@ list.addEventListener('change', e => {
     .forEach(input => input.disabled = disabled);
 
   const o = e.target.selectedValues[0];
+  // otp
+  document.querySelector('#toolbar [data-cmd="otp"]').disabled = true;
   if (o && o[0]) {
     const stringFields = o[0].stringFields;
     if (stringFields) {
@@ -266,7 +298,7 @@ document.addEventListener('keydown', e => {
     e.preventDefault();
   }
   else if (e.code === 'Enter' || e.code === 'NumpadEnter') {
-    if (e.target.nodeName === 'SELECT') {
+    if (e.target.nodeName === 'SIMPLE-LIST-VIEW') {
       document.querySelector('[data-cmd="insert-both"]').click();
     }
   }
@@ -291,7 +323,7 @@ insert.fields = async stringFields => {
   return await chrome.scripting.executeScript({
     target: {
       tabId: tab.id,
-      allFrames: true
+      allFrames
     },
     func: stringFields => {
       const {aElement} = window;
@@ -344,7 +376,7 @@ insert.fields = async stringFields => {
 insert.username = username => chrome.scripting.executeScript({
   target: {
     tabId: tab.id,
-    allFrames: true
+    allFrames
   },
   func: username => {
     const once = aElement => {
@@ -400,7 +432,7 @@ insert.username = username => chrome.scripting.executeScript({
 insert.password = password => chrome.scripting.executeScript({
   target: {
     tabId: tab.id,
-    allFrames: true
+    allFrames
   },
   func: password => {
     const es = [];
@@ -450,7 +482,7 @@ insert.password = password => chrome.scripting.executeScript({
 insert.submit = () => chrome.scripting.executeScript({
   target: {
     tabId: tab.id,
-    allFrames: true
+    allFrames
   },
   func: () => {
     const {aElement} = window;
@@ -509,7 +541,7 @@ document.addEventListener('click', async e => {
       await chrome.scripting.executeScript({
         target: {
           tabId: tab.id,
-          allFrames: true
+          allFrames
         },
         func: () => {
           window.detectForm = e => {
@@ -706,13 +738,28 @@ const access = () => new Promise(resolve => chrome.storage.local.get({
 
     let aElement = false;
     try {
-      const r = await chrome.scripting.executeScript({
-        target: {
-          tabId: tab.id,
-          allFrames: true
-        },
-        files: ['/data/cmd/inject.js']
-      });
+      // sometimes "chrome.scripting.executeScript" does not resolve when there are cross-origin frames
+      let r = await Promise.race([
+        chrome.scripting.executeScript({
+          target: {
+            tabId: tab.id,
+            allFrames: true
+          },
+          files: ['/data/cmd/inject.js']
+        }),
+        new Promise(resolve => setTimeout(() => resolve(false), 2000))
+      ]);
+      if (r === false) {
+        allFrames = false;
+        r = await chrome.scripting.executeScript({
+          target: {
+            tabId: tab.id,
+            allFrames: false
+          },
+          files: ['/data/cmd/inject.js']
+        });
+      }
+
       usernames = r.map(r => r.result?.usernames).flat().filter((s, i, l) => s && l.indexOf(s) === i);
       aElement = r.map(r => r.result?.aElement).flat().some(a => a);
     }
@@ -731,17 +778,14 @@ const access = () => new Promise(resolve => chrome.storage.local.get({
         if (granted) {
           document.querySelector('#toast input').style.visibility = 'hidden';
         }
-        document.querySelector('#toast span').textContent = 'No active form found!' + (granted ? ' Focus an element and retry.' : '');
+        document.querySelector('#toast span').textContent = 'No active form found!' + (granted ? ' Focus an element on the page and retry.' : '');
         document.getElementById('toast').classList.remove('hidden');
       });
     }
     submit();
   }
   catch (e) {
-    console.warn(e);
-    add(e.message, undefined, undefined, undefined, true);
-    add('Use the options page to connect to KeePass, KeePassXC, or a local database');
-    document.getElementById('title').setAttribute('width', 0);
+    error(e);
   }
   window.focus();
 })();
