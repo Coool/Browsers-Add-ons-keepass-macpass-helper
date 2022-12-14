@@ -25,7 +25,7 @@ Inactive:
 
 ### Add-ons (Extensions) links
 
-  * [Homepage](https://add0n.com/keepass-helper.html)
+  * [Homepage](https://webextension.org/listing/keepass-helper.html)
   * [Firefox](https://addons.mozilla.org/lv/firefox/addon/keepasshelper) ([Waterfox](https://addons.mozilla.org/lv/firefox/addon/keepasshelper))
   * [Vivaldi](https://chrome.google.com/webstore/detail/keepassmacpass-helper/jgnfghanfbjmimbdmnjfofnbcgpkbegj) (Chromium)
   * [Chrome](https://chrome.google.com/webstore/detail/keepassmacpass-helper/jgnfghanfbjmimbdmnjfofnbcgpkbegj) (Chromium)
