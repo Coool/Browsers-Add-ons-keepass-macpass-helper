@@ -1,16 +1,16 @@
 'use strict';
 
-function isEditable(e) {
+function editable(e) {
   const node = e && e.nodeName.toLowerCase();
   if (e && e.nodeType === 1 && (node === 'textarea' ||
     (node === 'input' && /^(?:text|email|number|search|tel|url|password)$/i.test(e.type)))) {
-    return true;
+    return e;
   }
-  return e ? e.isContentEditable : false;
+  return e ? (e.isContentEditable ? e : null) : null;
 }
 
 // will be used to focus the element after text insertion
-window.aElement = isEditable(document.activeElement) ? document.activeElement : null;
+window.aElement = editable(document.activeElement);
 
 // try to find used usernames
 {
@@ -18,6 +18,22 @@ window.aElement = isEditable(document.activeElement) ? document.activeElement : 
     .map(p => p.form)
     .filter(f => f)
     .filter((f, i, l) => l.indexOf(f) === i);
+
+  // https://github.com/belaviyo/keepass-macpass-helper/issues/69
+  // https://login.aliexpress.com/
+  if (forms.length === 0) {
+    const password = document.querySelector('input[type=password]');
+    if (password) {
+      let parent = password.parentElement;
+      while (parent !== document.body && parent.querySelector('input[type=email],input[type=text]') === null) {
+        parent = parent.parentElement;
+      }
+
+      if (parent.querySelector('input[type=email],input[type=text]')) {
+        forms.push(parent);
+      }
+    }
+  }
 
   const usernames = forms.map(f => {
     return [...f.querySelectorAll('input:not([type=password])')].filter(i => {

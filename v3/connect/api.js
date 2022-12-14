@@ -73,5 +73,7 @@ engine.connected = async type => {
       top: win.top + Math.round((win.height - 300) / 2),
       type: 'popup'
     }, () => window.close());
+
+    throw Error(e);
   }
 };
