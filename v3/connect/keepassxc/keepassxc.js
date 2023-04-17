@@ -10,6 +10,7 @@ class KeePassXC extends SimpleStorage {
 
     this.textEncoder = new TextEncoder(); // always utf-8
     this.textDecoder = new TextDecoder('utf-8');
+    this.timeout = 5000;
   }
   async prepare() {
     this.nonce = this.btoa(crypto.getRandomValues(new Uint8Array(24)));
@@ -74,7 +75,7 @@ class KeePassXC extends SimpleStorage {
     return JSON.parse(this.textDecoder.decode(res));
   }
   post(request) {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       if (window.top !== window && /Firefox/.test(navigator.userAgent)) {
         chrome.runtime.sendMessage({
           cmd: 'native',
@@ -83,7 +84,15 @@ class KeePassXC extends SimpleStorage {
         }, resolve);
       }
       else {
-        chrome.runtime.sendNativeMessage(this.nativeID, request, resolve);
+        if (chrome.runtime.sendNativeMessage) {
+          Promise.race([
+            new Promise(r => chrome.runtime.sendNativeMessage(this.nativeID, request, r)),
+            new Promise(r => setTimeout(r, this.timeout, undefined))
+          ]).then(resolve);
+        }
+        else {
+          reject(Error('native access it not configured. Use the options page to allow it'));
+        }
       }
     });
   }
@@ -194,6 +203,17 @@ class KeePassXC extends SimpleStorage {
       throw Error(resp.error || 'Cannot retrieve credentials');
     });
   }
+  'get-totp'(uuid) {
+    return this.securePost({
+      'action': 'get-totp',
+      uuid
+    }).then(resp => {
+      if (resp.success === 'true') {
+        return resp.totp;
+      }
+      return '';
+    });
+  }
   async search({url}) {
     try {
       await this['test-associate']();
@@ -202,6 +222,7 @@ class KeePassXC extends SimpleStorage {
       await this.associate();
     }
     const resp = await this['get-logins'](url);
+
     return {
       Entries: resp.map(e => Object.assign(e, {
         Login: e.login,
